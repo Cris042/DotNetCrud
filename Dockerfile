@@ -1,19 +1,14 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS base
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build-env
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
-WORKDIR /src
-COPY . .
-RUN dotnet restore 
-RUN dotnet build --no-restore -c Release -o /app
+COPY *.csproj ./
+RUN dotnet restore
 
-FROM build AS publish
-RUN dotnet publish --no-restore -c Release -o /app
+COPY . ./
+RUN dotnet publish -c Release -o out
 
-FROM base AS final
+FROM mcr.microsoft.com/dotnet/aspnet:6.0
 WORKDIR /app
-COPY --from=publish /app .
-# Padrão de container ASP.NET
-# ENTRYPOINT ["dotnet", "CarterAPI.dll"]
-# Opção utilizada pelo Heroku
-CMD ASPNETCORE_URLS=http://*:$PORT dotnet CarterAPI.dll
+COPY --from=build-env /app/out .
+# CMD ASPNETCORE_URLS=http://*:$PORT dotnet MinApiExample.dll
+ENTRYPOINT ["dotnet", "MinApiExample.dll"]
